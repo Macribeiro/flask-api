@@ -1,0 +1,65 @@
+import flask
+from flask import request, jsonify, render_template
+import mysql.connector
+'''
+Cria o objeto de aplicativo Flask, que contém dados sobre o aplicativo e também métodos (funções de objeto) 
+que instruem o aplicativo a realizar determinadas ações.
+A última linha, app.run (), é um desses métodos.
+'''
+app = flask.Flask(__name__)
+
+'''
+Inicia o depurador. Com esta linha, se seu código estiver malformado, você verá um erro ao visitar 
+seu aplicativo. Caso contrário, você só verá uma mensagem genérica como Bad Gateway no navegador 
+quando houver um problema com seu código.
+'''
+app.config["DEBUG"] = True
+
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="1234",
+  database = "criarapi"
+)
+
+@app.route('/', methods=['GET'])
+def Principal():
+    return "<h1>Minhas bandas favoritas</h1><p>Essa página vai listar as bandas que eu mais ouço</p><br><p> a ordem é Identificador(id); Nome da banda; Primeiro Álbum; Último Álbum" 
+
+@app.route('/api/v1/resources/bandas/all', methods=['GET'])
+def api_todos():
+    if(request.method == 'GET'):
+
+        mc = mydb.cursor()
+
+        mc.execute("SELECT * FROM Bandas")
+
+    result = mc.fetchall()
+
+    return jsonify(result)
+
+@app.errorhandler(405)
+def erro_405(e):
+    return "Só funciona com GET, filhão :D"
+
+@app.errorhandler(500)
+def erro_500(e):
+    return "Xiiii... :( Houve uma dificuldade no processamento do servidor."
+
+@app.route('/api/v1/resources/bandas/<int:id>', methods=['GET'])
+def api_id(id):
+    if(request.method == 'GET'):
+        mc = mydb.cursor()
+        mc.execute("SELECT * FROM Bandas WHERE id=" +str(id))
+
+    res = mc.fetchall()
+    return jsonify({'banda':str(res)})
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return "<h1>404</h1><p>O recurso não foi encontrado.</p>", 404
+    
+'''
+Um método que executa o servidor de aplicativos.
+'''
+app.run()
